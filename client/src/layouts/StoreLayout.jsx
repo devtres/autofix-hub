@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import CartDrawer from '../components/store/CartDrawer';
 
 export default function StoreLayout() {
-  const { count, setOpen } = useCart();
+  const { count, setOpen, wishlist } = useCart();
   return (
     <>
       <Navbar expand="md" className="store-nav border-bottom">
@@ -25,7 +25,9 @@ export default function StoreLayout() {
           <Navbar.Collapse>
             <Nav className="mx-auto gap-md-5">
               <Nav.Link as={NavLink} to="/">Shop Parts</Nav.Link>
+              <Nav.Link as={NavLink} to="/wishlist">Wishlist{wishlist.length > 0 && ` (${wishlist.length})`}</Nav.Link>
               <Nav.Link as={NavLink} to="/track">Track an Order</Nav.Link>
+              <Nav.Link as={NavLink} to="/orders">My Orders</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>

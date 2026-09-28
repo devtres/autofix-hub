@@ -7,13 +7,24 @@ import Products from './pages/admin/Products';
 const Soon = ({ title }) => (
   <div><p className="eyebrow mb-1">Coming soon</p><h1 className="display-cond display-5">{title}</h1></div>
 );
+import TrackOrder from './pages/store/TrackOrder';
+import Checkout from './pages/store/Checkout';
+import OrderConfirmation from './pages/store/OrderConfirmation';
+import OrderHistory from './pages/store/OrderHistory';
+import ProductDetail from './pages/store/ProductDetail';
+import Wishlist from './pages/store/Wishlist';
 
 export default function App() {
   return (
     <Routes>
       <Route element={<StoreLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/track" element={<div className="container py-5"><h1 className="display-cond">Track an order</h1></div>} />
+        <Route path="/track" element={<TrackOrder />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmation />} />
+        <Route path="/orders" element={<OrderHistory />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/products/:productId" element={<ProductDetail />} />
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>
