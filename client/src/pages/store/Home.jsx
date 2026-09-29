@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { Button, Container, Row, Col, Form } from 'react-bootstrap';
 import Hero from '../../components/store/Hero';
 import ProductCard from '../../components/store/ProductCard';
+HEAD
+
+import { PRODUCTS } from '../../data/mockProducts';
+
+const CATEGORIES = ['All parts', 'Brake Systems', 'Suspension', 'Engine', 'Electrical', 'Workshop Tools'];
 import { CATEGORIES, PRODUCTS } from '../../data/products';
 const FEATURES = [
   { icon:'bi-shield-check', title:'Fitment checked', sub:'Buy with confidence' },

@@ -2,6 +2,8 @@
 @import 'overrides';
 @import 'bootstrap/scss/bootstrap';   // must come after the overrides
 @import 'storefront';
+@import 'admin';
+
 @import 'tracking';
 @import 'checkout';
 @import 'history';

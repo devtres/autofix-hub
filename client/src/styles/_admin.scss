@@ -1,0 +1,37 @@
+.admin { display:flex; min-height:100vh; background:$afh-black; color:#e9e6e0;
+  --bs-body-bg:#{$afh-black}; --bs-body-color:#e9e6e0;
+  .eyebrow { color:rgba(255,255,255,.45); }
+
+  .sidebar { width:240px; flex:none; position:sticky; top:0; height:100vh; padding:1.25rem 1rem;
+    background:$afh-sidebar; border-right:1px solid rgba(255,255,255,.06); }
+  .admin-main { flex:1; min-width:0; }
+  .admin-topbar { display:flex; align-items:center; gap:.75rem; padding:.9rem 1.25rem;
+    border-bottom:1px solid rgba(255,255,255,.06); font-size:.75rem; color:rgba(255,255,255,.5); }
+
+  .panel { background:$afh-panel; border:1px solid rgba(255,255,255,.08); border-radius:14px; overflow:hidden; }
+  .form-control { background:#0f1314; border-color:rgba(255,255,255,.1); color:#fff;
+    &::placeholder { color:rgba(255,255,255,.35); } &:focus { background:#0f1314; color:#fff; } }
+  .input-group-text { background:#0f1314; border-color:rgba(255,255,255,.1); color:rgba(255,255,255,.45); }
+
+  .table { --bs-table-bg:transparent; --bs-table-hover-bg:#181C1D; --bs-table-hover-color:#fff;
+    --bs-table-border-color:rgba(255,255,255,.06); --bs-table-color:#e9e6e0;
+    thead th { font:500 .6rem $font-family-monospace; letter-spacing:.14em; text-transform:uppercase;
+      color:rgba(255,255,255,.4); padding:.9rem 1rem; }
+    td { padding:.9rem 1rem; } }
+
+  .mobile-row { padding:1rem; border-top:1px solid rgba(255,255,255,.06); }
+}
+
+/* sidebar links: top-level, because the mobile Offcanvas renders outside .admin */
+.sidebar-nav .nav-link { display:flex; align-items:center; gap:.65rem; padding:.55rem .75rem; margin-bottom:.15rem;
+  border-radius:8px; font-size:.8rem; color:rgba(255,255,255,.65);
+  &:hover { color:#fff; background:rgba(255,255,255,.05); }
+  &.active { background:$afh-red; color:#fff; } }
+.sidebar-nav .group { font:500 .55rem $font-family-monospace; letter-spacing:.18em; text-transform:uppercase;
+  color:rgba(255,255,255,.35); margin:1.3rem 0 .4rem .75rem; }
+.admin-offcanvas { background:$afh-sidebar; color:#fff; width:260px !important; }
+
+.badge-pill { display:inline-block; font:600 .6rem $font-family-monospace; padding:.2rem .55rem; border-radius:50rem; }
+.badge-healthy { background:rgba(31,157,107,.16); color:#3ecf8e; border:1px solid rgba(62,207,142,.3); }
+.badge-low     { background:$afh-amber; color:$afh-ink; }
+.badge-out     { background:rgba(230,59,47,.18); color:#ff7a70; }
