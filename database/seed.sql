@@ -1,9 +1,28 @@
 USE autofix_hub;
 
-INSERT INTO products (sku, name, category, fitment_details, price, stock, is_low_stock) VALUES
-('AF-BRK-408', 'Apex Ceramic Brake Kit', 'Brake Systems', 'RPM M3 / D80', 488.00, 20, FALSE),
-('AF-SUS-118', 'Trackline Coilover Set', 'Suspension', 'TOYOTA GR86 / 2022+', 1240.00, 3, TRUE),
-('AF-ENG-052', 'Titanium Oil Cooler', 'Engine', 'UNIVERSAL / 10-AN', 296.00, 15, FALSE),
-('AF-ELE-003', 'Pulse LED Light Bar', 'Electrical', 'UNIVERSAL / 22IN', 184.00, 2, TRUE),
-('AF-WKS-101', 'TorqueMaster Digital Wrench', 'Workshop Tools', '1/2IN DRIVE / 20-200FT', 329.00, 12, FALSE),
-('AF-BRK-011', 'Pro Race Brake Fluid', 'Brake Systems', 'DOT 4 / 500ML', 34.00, 50, FALSE);
+-- Insert Seed Product matching team ENUM categories
+INSERT INTO products (id, sku, name, category, fitment_details, price, stock, is_low_stock)
+VALUES (1, 'BRK-PAD-001', 'Brembo Ceramic Brake Pads', 'Brake Systems', 'Toyota Vios 2018-2024 1.3L', 1450.00, 25, FALSE)
+ON DUPLICATE KEY UPDATE name=VALUES(name);
+
+-- Insert Seed Vehicle Compatibility
+INSERT INTO vehicle_compatibility (product_id, vehicle_type, make, model, year_start, year_end, engine_displacement)
+VALUES (1, 'Car', 'Toyota', 'Vios', 2018, 2024, '1.3L')
+ON DUPLICATE KEY UPDATE make=VALUES(make);
+
+-- Insert Seed Order
+INSERT INTO orders (id, order_number, tracking_number, guest_email, shipping_address, total_amount, status)
+VALUES (1, 'ORD-2026-001', 'AFH-89210', 'customer@example.com', '123 Main St, Dasmariñas, Cavite', 1450.00, 'shipped')
+ON DUPLICATE KEY UPDATE tracking_number=VALUES(tracking_number);
+
+-- Insert Seed Order Item
+INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+VALUES (1, 1, 1, 1450.00)
+ON DUPLICATE KEY UPDATE quantity=VALUES(quantity);
+
+-- Insert Seed Order Tracking Events
+INSERT INTO order_tracking (order_id, status, location, notes) VALUES
+(1, 'pending', 'Store System', 'Order placed by customer.'),
+(1, 'packed', 'Dasmariñas Warehouse', 'Items packed and ready for dispatch.'),
+(1, 'shipped', 'Cavite Sorting Hub', 'Parcel is in transit with logistics courier.')
+ON DUPLICATE KEY UPDATE status=VALUES(status);
