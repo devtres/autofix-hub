@@ -4,7 +4,7 @@ import { useCart } from '../../context/CartContext';
 
 export default function ProductCard({ p }) {
   const { add, wishlist, toggleWishlist } = useCart();
-  const low = p.stock_qty <= p.low_stock_threshold;
+  const low = p.is_low_stock;
   const saved = wishlist.some((item) => item.product_id === p.product_id);
   return (
     <Card className="product-card" style={{ '--accent': p.accent_color }}>
