@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import db from './db.js';
+import { checkJwt, syncUser, requireRole } from './middleware/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +37,11 @@ app.get('/api/products/category/:category', async (req, res) => {
     console.error('Error fetching filtered products:', error);
     res.status(500).json({ error: 'Database query error' });
   }
+});
+
+// Returns the signed-in user's own DB record + role
+app.get('/api/me', checkJwt, syncUser, async (req, res) => {
+  res.json(req.dbUser);
 });
 
 // -------------------------------------------------------------
@@ -119,7 +125,7 @@ app.listen(PORT, () => {
 });
 
 // Create a new product
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, res) => {
   try {
     const { sku, name, category, fitment_details, price, stock } = req.body;
     if (!sku || !name || !category || price == null) {
@@ -140,7 +146,7 @@ app.post('/api/products', async (req, res) => {
 });
 
 // Edit an existing product
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { sku, name, category, fitment_details, price, stock } = req.body;
