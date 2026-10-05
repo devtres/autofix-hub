@@ -32,6 +32,12 @@ function SidebarNav({ onNavigate }) {
       <Nav className="flex-column">{links(WORKSPACE)}</Nav>
       <div className="group">Manage</div>
       <Nav className="flex-column">{links(MANAGE)}</Nav>
+      <div className="group">Storefront</div>
+      <Nav className="flex-column">
+        <Nav.Link as={Link} to="/" onClick={onNavigate}>
+          <i className="bi bi-arrow-left-circle" /> Back to Shop
+        </Nav.Link>
+      </Nav>
     </div>
   );
 }
@@ -43,11 +49,16 @@ export default function AdminLayout() {
       <aside className="sidebar d-none d-lg-block"><SidebarNav /></aside>
 
       <div className="admin-main">
-        <header className="admin-topbar">
-          <Button variant="outline-light" size="sm" className="d-lg-none" onClick={() => setOpen(true)} aria-label="Open menu">
-            <i className="bi bi-list" />
+        <header className="admin-topbar d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center gap-2">
+            <Button variant="outline-light" size="sm" className="d-lg-none" onClick={() => setOpen(true)} aria-label="Open menu">
+              <i className="bi bi-list" />
+            </Button>
+            <span>Workspace <span className="mx-1">/</span> <span className="text-white">AutoFix Hub</span></span>
+          </div>
+          <Button as={Link} to="/" variant="outline-light" size="sm" className="d-flex align-items-center gap-2">
+            <i className="bi bi-shop" /> View Storefront
           </Button>
-          <span>Workspace <span className="mx-1">/</span> <span className="text-white">AutoFix Hub</span></span>
         </header>
         <main className="p-3 p-md-4"><Outlet /></main>
       </div>

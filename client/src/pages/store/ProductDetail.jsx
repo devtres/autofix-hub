@@ -1,16 +1,81 @@
-import { Button, Col, Container, Row } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Button, Col, Container, Row, Spinner } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../../components/store/ProductCard';
 import { useCart } from '../../context/CartContext';
 import { PRODUCTS } from '../../data/products';
+import { fetchProductById, fetchProducts } from '../../api/products';
 
 export default function ProductDetail() {
   const { productId } = useParams();
   const { add } = useCart();
-  const product = PRODUCTS.find((item) => item.product_id === Number(productId));
-  const related = product ? PRODUCTS.filter((item) => item.category === product.category && item.product_id !== product.product_id).slice(0, 2) : [];
+  const [product, setProduct] = useState(() => {
+    const staticMatch = PRODUCTS.find((item) => item.product_id === Number(productId));
+    return staticMatch || null;
+  });
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(!product);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!product) {
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+
+    fetchProductById(productId)
+      .then((dbProduct) => {
+        if (cancelled) return;
+        const staticMatch = PRODUCTS.find((p) => p.product_id === dbProduct.product_id);
+        const merged = {
+          description: staticMatch?.description || `${dbProduct.name} is a high-grade performance part engineered for durability and precise fitment.`,
+          type: staticMatch?.type || 'Performance Spec',
+          make: staticMatch?.make || 'OEM / Custom Fitment',
+          model: staticMatch?.model || dbProduct.fitment || 'Various',
+          years: staticMatch?.years || ['All Years'],
+          displacement: staticMatch?.displacement || 'Standard',
+          universal: staticMatch ? staticMatch.universal : true,
+          ...staticMatch,
+          ...dbProduct,
+        };
+        setProduct(merged);
+        setLoading(false);
+
+        fetchProducts()
+          .then((all) => {
+            if (cancelled) return;
+            const rel = all.filter((item) => item.category === merged.category && item.product_id !== merged.product_id).slice(0, 2);
+            setRelated(rel);
+          })
+          .catch(() => {});
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const staticMatch = PRODUCTS.find((item) => item.product_id === Number(productId));
+        if (staticMatch) {
+          setProduct(staticMatch);
+          setRelated(PRODUCTS.filter((item) => item.category === staticMatch.category && item.product_id !== staticMatch.product_id).slice(0, 2));
+          setLoading(false);
+        } else {
+          setNotFound(true);
+          setLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [productId]);
+
+  if (loading && !product) {
+    return (
+      <main className="detail-page">
+        <Container className="py-5 text-center">
+          <Spinner animation="border" className="mb-3" />
+          <p className="text-muted">Loading part specifications...</p>
+        </Container>
+      </main>
+    );
+  }
+
+  if (notFound || !product) {
     return <main className="detail-page"><Container className="py-5"><div className="catalog-empty"><i className="bi bi-box-seam" /><h1>Part not found</h1><p>This item may no longer be in the catalog.</p><Button as={Link} to="/" variant="dark">Browse parts</Button></div></Container></main>;
   }
 

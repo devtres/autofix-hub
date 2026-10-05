@@ -1,18 +1,56 @@
 import { useState } from 'react';
 import { Button, Container, Form } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { getSavedOrders } from '../../utils/orders';
+import { getSavedOrders, hydrateOrderFromDb } from '../../utils/orders';
+import { fetchOrderHistoryApi } from '../../api/orders';
 
 export default function OrderHistory() {
   const [email, setEmail] = useState('');
   const [searchedEmail, setSearchedEmail] = useState('');
-  const orders = searchedEmail
-    ? getSavedOrders().filter((order) => order.email === searchedEmail.toLowerCase())
-    : [];
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  function searchHistory(event) {
+  async function searchHistory(event) {
     event.preventDefault();
-    setSearchedEmail(email.trim().toLowerCase());
+    const em = email.trim().toLowerCase();
+    if (!em) return;
+
+    setSearchedEmail(em);
+    setLoading(true);
+
+    try {
+      // 1. Fetch live orders from MySQL backend
+      const dbOrders = await fetchOrderHistoryApi(em);
+      const hydratedDb = Array.isArray(dbOrders) ? dbOrders.map(hydrateOrderFromDb) : [];
+
+      // 2. Fetch local storage orders
+      const localOrders = getSavedOrders().filter((o) => (o.email || '').toLowerCase() === em);
+
+      // 3. Merge without duplicates (DB orders take precedence)
+      const seen = new Set();
+      const merged = [];
+
+      for (const ord of hydratedDb) {
+        if (!seen.has(ord.orderNumber)) {
+          seen.add(ord.orderNumber);
+          merged.push(ord);
+        }
+      }
+      for (const ord of localOrders) {
+        if (!seen.has(ord.orderNumber)) {
+          seen.add(ord.orderNumber);
+          merged.push(ord);
+        }
+      }
+
+      setOrders(merged);
+    } catch (err) {
+      console.warn('Could not query database order history, falling back to local storage:', err);
+      const localOrders = getSavedOrders().filter((o) => (o.email || '').toLowerCase() === em);
+      setOrders(localOrders);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -21,15 +59,15 @@ export default function OrderHistory() {
         <div className="history-heading">
           <p className="eyebrow mb-2">Your garage / Past orders</p>
           <h1 className="display-cond">Order history.</h1>
-          <p>Look up demo orders saved in this browser using the checkout email.</p>
-          <span className="mono-sm">Local preview only · Account sign-in is not configured</span>
+          <p>Look up past orders placed with your email address.</p>
+          <span className="mono-sm">Verified orders from AutoFix Hub database</span>
         </div>
 
         <Form className="history-search" onSubmit={searchHistory}>
           <Form.Label htmlFor="history-email" className="mono-sm">Checkout email</Form.Label>
           <div>
             <Form.Control id="history-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required />
-            <Button type="submit" variant="dark">View history</Button>
+            <Button type="submit" variant="dark" disabled={loading}>{loading ? 'Searching...' : 'View history'}</Button>
           </div>
         </Form>
 
