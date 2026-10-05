@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Button, Col, Container, Form, Row } from 'react-bootstrap';
 import { useLocation } from 'react-router-dom';
 import L from 'leaflet';
-import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet';
+import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createApproximateRoute } from '../../utils/philippineLocations';
-import { getSavedOrders } from '../../utils/orders';
+import { getSavedOrders, hydrateOrderFromDb } from '../../utils/orders';
+import { trackOrderApi } from '../../api/orders';
 
 const DEMO_ORDERS = [
   {
@@ -95,9 +96,26 @@ function TrackingMap({ order, progress }) {
       />
       <FitRoute route={order.route} />
       <Polyline positions={order.route} pathOptions={{ color: '#E63B2F', weight: 4, opacity: 0.88, dashArray: '8 7' }} />
-      <CircleMarker center={order.route[0]} radius={7} pathOptions={{ color: '#fff', weight: 3, fillColor: '#161A1B', fillOpacity: 1 }} />
-      <CircleMarker center={order.route[order.route.length - 1]} radius={7} pathOptions={{ color: '#fff', weight: 3, fillColor: '#1F9D6B', fillOpacity: 1 }} />
-      {!order.delivered && <Marker position={position} icon={liveIcon} />}
+      <CircleMarker center={order.route[0]} radius={8} pathOptions={{ color: '#fff', weight: 3, fillColor: '#161A1B', fillOpacity: 1 }}>
+        <Tooltip permanent direction="top" offset={[0, -10]} className="map-bubble-tooltip">
+          <span className="tooltip-tag origin">Origin</span>
+          <strong>AutoFix Fulfillment Center</strong>
+        </Tooltip>
+      </CircleMarker>
+      <CircleMarker center={order.route[order.route.length - 1]} radius={8} pathOptions={{ color: '#fff', weight: 3, fillColor: '#1F9D6B', fillOpacity: 1 }}>
+        <Tooltip permanent direction="top" offset={[0, -10]} className="map-bubble-tooltip">
+          <span className="tooltip-tag dest">Destination</span>
+          <strong>{order.destination}</strong>
+        </Tooltip>
+      </CircleMarker>
+      {!order.delivered && (
+        <Marker position={position} icon={liveIcon}>
+          <Tooltip direction="bottom" offset={[0, 12]} className="map-bubble-tooltip">
+            <span className="tooltip-tag transit">In Transit</span>
+            <strong>AutoFix Express</strong>
+          </Tooltip>
+        </Marker>
+      )}
     </MapContainer>
   );
 }
@@ -108,6 +126,7 @@ export default function TrackOrder() {
   const [email, setEmail] = useState(routeState?.email ?? '');
   const [order, setOrder] = useState(() => routeState?.orderNumber ? findOrder(routeState.orderNumber, routeState.email) : null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0.38);
 
   useEffect(() => {
@@ -123,26 +142,85 @@ export default function TrackOrder() {
     return () => window.clearInterval(timer);
   }, [order]);
 
-  function findOrderByDetails(event) {
-    event.preventDefault();
-    const match = findOrder(query, email);
-    if (!match) {
-      setOrder(null);
-      setError('We could not find an order with that number and email. Check both details and try again.');
+  // If routed with state but not yet loaded, look it up immediately
+  useEffect(() => {
+    if (routeState?.orderNumber && !order) {
+      lookupOrder(routeState.orderNumber, routeState.email);
+    }
+  }, [routeState]);
+
+  async function lookupOrder(orderQuery, emailQuery) {
+    const q = (orderQuery || '').trim();
+    const em = (emailQuery || '').trim().toLowerCase();
+    if (!q) return;
+
+    setLoading(true);
+    setError('');
+
+    // 1. Check instant demo orders first
+    const demoMatch = DEMO_ORDERS.find(
+      (d) =>
+        d.orderNumber.toUpperCase() === q.toUpperCase() &&
+        (!em || d.email.toLowerCase() === em)
+    );
+    if (demoMatch) {
+      setOrder(demoMatch);
+      setProgress(demoMatch.status === 'In transit' ? 0.38 : 1);
+      setQuery(demoMatch.orderNumber);
+      setEmail(demoMatch.email);
+      setLoading(false);
       return;
     }
-    setOrder(match);
-    setProgress(0.38);
-    setQuery(match.orderNumber);
-    setEmail(match.email);
-    setError('');
+
+    // 2. Query live MySQL backend database
+    try {
+      const data = await trackOrderApi(q, em || undefined);
+      const rawOrder = Array.isArray(data) ? data[0] : data;
+      if (rawOrder) {
+        const hydrated = hydrateOrderFromDb(rawOrder);
+        setOrder(hydrated);
+        setProgress(hydrated.status === 'In transit' ? 0.38 : 1);
+        setQuery(hydrated.orderNumber);
+        if (hydrated.email) setEmail(hydrated.email);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // If live tracking API returned 404 or error, check local storage next
+    }
+
+    // 3. Fallback to localStorage saved orders
+    const localMatch = getSavedOrders().find(
+      (o) =>
+        (o.orderNumber?.toUpperCase() === q.toUpperCase() ||
+          o.trackingNumber?.toUpperCase() === q.toUpperCase()) &&
+        (!em || o.email?.toLowerCase() === em)
+    );
+
+    if (localMatch) {
+      setOrder(localMatch);
+      setProgress(localMatch.status === 'In transit' ? 0.38 : 1);
+      setQuery(localMatch.orderNumber);
+      setEmail(localMatch.email);
+      setLoading(false);
+      return;
+    }
+
+    setOrder(null);
+    setError('We could not find an order with that number and email in our database. Check both details and try again.');
+    setLoading(false);
+  }
+
+  function findOrderByDetails(event) {
+    event.preventDefault();
+    lookupOrder(query, email);
   }
 
   function selectDemo(demoOrder) {
     setQuery(demoOrder.orderNumber);
     setEmail(demoOrder.email);
     setOrder(demoOrder);
-    setProgress(0.38);
+    setProgress(demoOrder.status === 'In transit' ? 0.38 : 1);
     setError('');
   }
 
@@ -162,7 +240,7 @@ export default function TrackOrder() {
               <Row className="g-2">
                 <Col sm={6}><Form.Label htmlFor="tracking-number" className="mono-sm mb-2">Order number</Form.Label><Form.Control id="tracking-number" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="AFH-XXXXXXXX" required /></Col>
                 <Col sm={6}><Form.Label htmlFor="tracking-email" className="mono-sm mb-2">Checkout email</Form.Label><Form.Control type="email" id="tracking-email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></Col>
-                <Col xs={12}><Button type="submit" variant="dark" className="tracking-submit"><i className="bi bi-search" /> Find order</Button></Col>
+                <Col xs={12}><Button type="submit" variant="dark" className="tracking-submit" disabled={loading}><i className="bi bi-search" /> {loading ? 'Searching database...' : 'Find order'}</Button></Col>
               </Row>
               {error && <div className="tracking-error" role="alert">{error}</div>}
               <div className="tracking-samples mono-sm">Try a demo:

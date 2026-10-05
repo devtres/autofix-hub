@@ -1,15 +1,41 @@
-import { Button, Col, Container, Row } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Button, Col, Container, Row, Spinner } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
-import { getSavedOrders } from '../../utils/orders';
+import { getSavedOrders, hydrateOrderFromDb } from '../../utils/orders';
+import { trackOrderApi } from '../../api/orders';
 
 export default function OrderConfirmation() {
   const { orderNumber } = useParams();
-  const order = getSavedOrders().find((item) => item.orderNumber === orderNumber);
+  const [order, setOrder] = useState(() => getSavedOrders().find((item) => item.orderNumber === orderNumber) || null);
+  const [loading, setLoading] = useState(!order);
+
+  useEffect(() => {
+    if (!order && orderNumber) {
+      trackOrderApi(orderNumber)
+        .then((data) => {
+          const raw = Array.isArray(data) ? data[0] : data;
+          if (raw) setOrder(hydrateOrderFromDb(raw));
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [order, orderNumber]);
+
+  if (loading) {
+    return (
+      <main className="checkout-page">
+        <Container className="py-5 text-center">
+          <Spinner animation="border" role="status" className="mb-3" />
+          <p className="text-muted">Loading order confirmation...</p>
+        </Container>
+      </main>
+    );
+  }
 
   if (!order) {
     return (
       <main className="checkout-page">
-        <Container className="py-5"><div className="checkout-empty"><h1>Order not found</h1><p className="text-muted">This order may have been cleared from this browser.</p><Button as={Link} to="/" variant="dark">Return to shop</Button></div></Container>
+        <Container className="py-5"><div className="checkout-empty"><h1>Order not found</h1><p className="text-muted">This order could not be located in our records.</p><Button as={Link} to="/" variant="dark">Return to shop</Button></div></Container>
       </main>
     );
   }

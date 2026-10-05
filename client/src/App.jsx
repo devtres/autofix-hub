@@ -3,18 +3,18 @@ import StoreLayout from './layouts/StoreLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Home from './pages/store/Home';
 import Products from './pages/admin/Products';
-import { useAttachAuthToken } from './auth/useAuthedHttp';
-import RequireAdmin from './auth/RequireAdmin';
-
-const Soon = ({ title }) => (
-  <div><p className="eyebrow mb-1">Coming soon</p><h1 className="display-cond display-5">{title}</h1></div>
-);
 import TrackOrder from './pages/store/TrackOrder';
 import Checkout from './pages/store/Checkout';
 import OrderConfirmation from './pages/store/OrderConfirmation';
 import OrderHistory from './pages/store/OrderHistory';
 import ProductDetail from './pages/store/ProductDetail';
 import Wishlist from './pages/store/Wishlist';
+import { useAttachAuthToken } from './auth/useAuthedHttp';
+import RequireAdmin from './auth/RequireAdmin';
+
+const Soon = ({ title }) => (
+  <div><p className="eyebrow mb-1">Coming soon</p><h1 className="display-cond display-5">{title}</h1></div>
+);
 
 export default function App() {
   useAttachAuthToken();
