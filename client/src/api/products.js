@@ -35,3 +35,12 @@ export async function fetchProductsByCategory(category) {
   const { data } = await http.get(`/products/category/${encodeURIComponent(category)}`);
   return data.map(mapProduct);
 }
+export async function createProduct(payload) {
+  const { data } = await http.post('/products', payload);
+  return data;
+}
+
+export async function updateProduct(id, payload) {
+  const { data } = await http.put(`/products/${id}`, payload);
+  return data;
+}

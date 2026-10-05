@@ -2,19 +2,28 @@ import { useEffect, useState } from 'react';
 import { Button, Form, InputGroup, Table, Spinner, Alert } from 'react-bootstrap';
 import { fetchProducts } from '../../api/products';
 import StatusBadge from '../../components/admin/StatusBadge';
+import ProductFormModal from '../../components/admin/ProductFormModal';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [q, setQ] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     fetchProducts()
       .then(setProducts)
       .catch(() => setError('Could not load products. Is the server running?'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(load, []);
+
+  const openAdd = () => { setEditing(null); setShowModal(true); };
+  const openEdit = (p) => { setEditing(p); setShowModal(true); };
 
   const list = products.filter((p) =>
     `${p.name} ${p.sku} ${p.fitment} ${p.category}`.toLowerCase().includes(q.toLowerCase()));
@@ -27,7 +36,7 @@ export default function Products() {
           <h1 className="display-cond display-5 mb-1">Product Command</h1>
           <p className="text-secondary small mb-0">Manage the parts that keep your partner garages moving.</p>
         </div>
-        <Button variant="primary"><i className="bi bi-plus-lg" /> Add product</Button>
+        <Button variant="primary" onClick={openAdd}><i className="bi bi-plus-lg" /> Add product</Button>
       </div>
 
       <div className="panel">
@@ -52,7 +61,7 @@ export default function Products() {
                 </thead>
                 <tbody>
                   {list.map((p) => (
-                    <tr key={p.product_id}>
+                    <tr key={p.product_id} role="button" onClick={() => openEdit(p)}>
                       <td>
                         <b className="d-block small">{p.name}</b>
                         <span className="mono-sm text-secondary" style={{ fontSize: '.55rem' }}>{p.sku} · {p.fitment}</span>
@@ -69,7 +78,7 @@ export default function Products() {
 
             <div className="d-md-none">
               {list.map((p) => (
-                <div key={p.product_id} className="mobile-row">
+                <div key={p.product_id} className="mobile-row" role="button" onClick={() => openEdit(p)}>
                   <div className="d-flex justify-content-between align-items-start gap-2">
                     <div>
                       <b className="d-block small">{p.name}</b>
@@ -87,6 +96,13 @@ export default function Products() {
           </>
         )}
       </div>
+
+      <ProductFormModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onSaved={load}
+        product={editing}
+      />
     </>
   );
 }

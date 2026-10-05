@@ -117,3 +117,40 @@ app.get('/api/orders/track/:query', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// Create a new product
+app.post('/api/products', async (req, res) => {
+  try {
+    const { sku, name, category, fitment_details, price, stock } = req.body;
+    if (!sku || !name || !category || price == null) {
+      return res.status(400).json({ error: 'sku, name, category and price are required' });
+    }
+    await db.query(
+      'INSERT INTO products (sku, name, category, fitment_details, price, stock, is_low_stock) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [sku, name, category, fitment_details || null, price, stock || 0, (stock || 0) <= 10 ? 1 : 0]
+    );
+    res.status(201).json({ message: 'Product created' });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'SKU already exists' });
+    }
+    res.status(500).json({ error: 'Database query error' });
+  }
+});
+
+// Edit an existing product
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sku, name, category, fitment_details, price, stock } = req.body;
+    await db.query(
+      'UPDATE products SET sku=?, name=?, category=?, fitment_details=?, price=?, stock=?, is_low_stock=? WHERE id=?',
+      [sku, name, category, fitment_details || null, price, stock, stock <= 10 ? 1 : 0, id]
+    );
+    res.json({ message: 'Product updated' });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Database query error' });
+  }
+});
