@@ -16,8 +16,10 @@ CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sku VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
+    description TEXT,
     category ENUM('Brake Systems', 'Suspension', 'Engine', 'Electrical', 'Workshop Tools') NOT NULL,
     fitment_details VARCHAR(255),
+    is_universal BOOLEAN DEFAULT FALSE,
     price DECIMAL(10, 2) NOT NULL,
     stock INT NOT NULL DEFAULT 0,
     is_low_stock BOOLEAN DEFAULT FALSE,
@@ -78,4 +80,22 @@ CREATE TABLE IF NOT EXISTS order_tracking (
     notes TEXT DEFAULT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+
+-- Suppliers Table (Powers Supplier Directory)
+CREATE TABLE IF NOT EXISTS suppliers (
+    supplier_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    contact_person VARCHAR(100),
+    email VARCHAR(150),
+    phone VARCHAR(30),
+    lead_time_days INT DEFAULT 3,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Store Settings Table (Powers Store Operational Parameters)
+CREATE TABLE IF NOT EXISTS store_settings (
+    setting_key VARCHAR(60) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL
 );

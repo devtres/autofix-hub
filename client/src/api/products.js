@@ -12,17 +12,40 @@ const CATEGORY_ACCENTS = {
 
 // Converts one raw DB row into the shape the UI components expect.
 function mapProduct(row) {
+  const isUniversal = !!row.is_universal;
+  const startYear = row.year_start ? Number(row.year_start) : null;
+  const endYear = row.year_end ? Number(row.year_end) : null;
+  let yearArray = null;
+
+  if (startYear && endYear && endYear >= startYear) {
+    yearArray = Array.from({ length: endYear - startYear + 1 }, (_, i) => String(startYear + i));
+  } else if (startYear) {
+    yearArray = [String(startYear)];
+  }
+
   return {
     product_id: row.id,
     sku: row.sku,
     name: row.name,
+    description: row.description,
     category: row.category,
     fitment: row.fitment_details,
     price: Number(row.price),
     stock_qty: row.stock,
-    low_stock_threshold: row.is_low_stock ? row.stock : 10, // fallback threshold; see note below
+    low_stock_threshold: row.is_low_stock ? row.stock : 10,
     is_low_stock: !!row.is_low_stock,
     accent_color: CATEGORY_ACCENTS[row.category] || '#222222',
+    is_universal: isUniversal,
+    universal: isUniversal,
+    vehicle_type: row.vehicle_type || (isUniversal ? null : 'Car'),
+    type: row.vehicle_type ? (row.vehicle_type === 'Car' ? 'Passenger car' : row.vehicle_type) : null,
+    make: row.make || null,
+    model: row.model || null,
+    year_start: startYear,
+    year_end: endYear,
+    years: yearArray,
+    displacement: row.engine_displacement || null,
+    engine_displacement: row.engine_displacement || null,
   };
 }
 

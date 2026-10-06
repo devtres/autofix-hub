@@ -1,10 +1,25 @@
 import { useEffect, useState } from 'react';
-import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import { Modal, Form, Button, Row, Col, Alert, Card } from 'react-bootstrap';
 import { createProduct, updateProduct } from '../../api/products';
 
 const CATEGORIES = ['Brake Systems', 'Suspension', 'Engine', 'Electrical', 'Workshop Tools'];
 
-const EMPTY = { sku: '', name: '', category: CATEGORIES[0], fitment_details: '', price: '', stock: '' };
+const EMPTY = {
+  sku: '',
+  name: '',
+  description: '',
+  category: CATEGORIES[0],
+  fitment_details: '',
+  price: '',
+  stock: '',
+  is_universal: false,
+  vehicle_type: 'Car',
+  make: '',
+  model: '',
+  year_start: '2022',
+  year_end: '2026',
+  engine_displacement: '',
+};
 
 export default function ProductFormModal({ show, onHide, onSaved, product }) {
   const [form, setForm] = useState(EMPTY);
@@ -15,8 +30,20 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
   useEffect(() => {
     if (product) {
       setForm({
-        sku: product.sku, name: product.name, category: product.category,
-        fitment_details: product.fitment, price: product.price, stock: product.stock_qty,
+        sku: product.sku || '',
+        name: product.name || '',
+        description: product.description || '',
+        category: product.category || CATEGORIES[0],
+        fitment_details: product.fitment || '',
+        price: product.price ?? '',
+        stock: product.stock_qty ?? '',
+        is_universal: !!product.is_universal || !!product.universal,
+        vehicle_type: product.vehicle_type || 'Car',
+        make: product.make || '',
+        model: product.model || '',
+        year_start: product.year_start ? String(product.year_start) : '',
+        year_end: product.year_end ? String(product.year_end) : '',
+        engine_displacement: product.displacement || product.engine_displacement || '',
       });
     } else {
       setForm(EMPTY);
@@ -24,65 +51,204 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
     setError(null);
   }, [product, show]);
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setForm((f) => ({ ...f, [key]: val }));
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     try {
-      const payload = { ...form, price: Number(form.price), stock: Number(form.stock) };
-      if (isEdit) await updateProduct(product.product_id, payload);
-      else await createProduct(payload);
+      const generatedFitment = form.is_universal
+        ? (form.fitment_details || 'Universal Fitment')
+        : (form.fitment_details || `${form.make} ${form.model} / ${form.year_start}+`.trim());
+
+      const payload = {
+        sku: form.sku.trim(),
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        category: form.category,
+        fitment_details: generatedFitment,
+        is_universal: form.is_universal,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        compatibility: form.is_universal
+          ? null
+          : {
+              vehicle_type: form.vehicle_type,
+              make: form.make.trim(),
+              model: form.model.trim(),
+              year_start: form.year_start ? Number(form.year_start) : null,
+              year_end: form.year_end ? Number(form.year_end) : null,
+              engine_displacement: form.engine_displacement.trim() || null,
+            },
+      };
+
+      if (isEdit) {
+        await updateProduct(product.product_id, payload);
+      } else {
+        await createProduct(payload);
+      }
+
       onSaved();
       onHide();
     } catch (err) {
-      setError(err.response?.data?.error || 'Something went wrong. Try again.');
+      console.error('Failed to save product:', err);
+      setError(err.response?.data?.error || 'Something went wrong while saving product.');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal show={show} onHide={onHide} fullscreen="sm-down" centered data-bs-theme="dark">
+    <Modal show={show} onHide={onHide} size="lg" centered data-bs-theme="dark">
       <Form onSubmit={submit}>
         <Modal.Header closeButton closeVariant="white">
-          <Modal.Title className="display-cond fs-4">{isEdit ? 'Edit product' : 'Add product'}</Modal.Title>
+          <Modal.Title className="display-cond fs-4">{isEdit ? 'Edit Product' : 'Add New Product'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           {error && <Alert variant="danger">{error}</Alert>}
-          <Row className="g-3">
+
+          {/* Section 1: Basic Information */}
+          <span className="eyebrow text-secondary d-block mb-3">1. Basic Specifications</span>
+          <Row className="g-3 mb-4">
             <Col md={6}>
-              <Form.Label className="mono-sm">SKU</Form.Label>
-              <Form.Control required value={form.sku} onChange={set('sku')} placeholder="AF-BRK-999" />
+              <Form.Label className="mono-sm text-secondary">SKU Code</Form.Label>
+              <Form.Control required value={form.sku} onChange={set('sku')} placeholder="e.g., AF-BRK-430" />
             </Col>
             <Col md={6}>
-              <Form.Label className="mono-sm">Category</Form.Label>
+              <Form.Label className="mono-sm text-secondary">Category</Form.Label>
               <Form.Select value={form.category} onChange={set('category')}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </Form.Select>
             </Col>
             <Col xs={12}>
-              <Form.Label className="mono-sm">Name</Form.Label>
-              <Form.Control required value={form.name} onChange={set('name')} placeholder="Apex Ceramic Brake Kit" />
+              <Form.Label className="mono-sm text-secondary">Product Name</Form.Label>
+              <Form.Control required value={form.name} onChange={set('name')} placeholder="e.g., Apex Ceramic Brake Kit" />
             </Col>
             <Col xs={12}>
-              <Form.Label className="mono-sm">Fitment</Form.Label>
-              <Form.Control value={form.fitment_details} onChange={set('fitment_details')} placeholder="BMW M3 / G80" />
+              <Form.Label className="mono-sm text-secondary">Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={form.description}
+                onChange={set('description')}
+                placeholder="High-grade performance component designed for optimal reliability..."
+              />
             </Col>
             <Col md={6}>
-              <Form.Label className="mono-sm">Price (₱)</Form.Label>
+              <Form.Label className="mono-sm text-secondary">Price (₱)</Form.Label>
               <Form.Control required type="number" step="0.01" min="0" value={form.price} onChange={set('price')} />
             </Col>
             <Col md={6}>
-              <Form.Label className="mono-sm">Stock</Form.Label>
+              <Form.Label className="mono-sm text-secondary">Initial Stock Quantity</Form.Label>
               <Form.Control required type="number" min="0" value={form.stock} onChange={set('stock')} />
             </Col>
           </Row>
+
+          {/* Section 2: Compatibility & Fitment */}
+          <span className="eyebrow text-secondary d-block mb-2">2. Vehicle Compatibility (Powers Fitment Box)</span>
+          <Card className="bg-black border-secondary border-opacity-25 p-3 mb-3">
+            <Form.Check
+              type="switch"
+              id="universal-switch"
+              label="Universal Part (Tools, Fluids, Generic Light Bars)"
+              checked={form.is_universal}
+              onChange={set('is_universal')}
+              className="mb-3 text-light"
+            />
+
+            {!form.is_universal ? (
+              <Row className="g-3">
+                <Col md={6}>
+                  <Form.Label className="mono-sm text-secondary">Vehicle Classification</Form.Label>
+                  <Form.Select value={form.vehicle_type} onChange={set('vehicle_type')}>
+                    <option value="Car">Passenger Car</option>
+                    <option value="Motorcycle">Motorcycle</option>
+                  </Form.Select>
+                </Col>
+                <Col md={6}>
+                  <Form.Label className="mono-sm text-secondary">Engine Displacement / Spec</Form.Label>
+                  <Form.Control
+                    value={form.engine_displacement}
+                    onChange={set('engine_displacement')}
+                    placeholder="e.g., 2.4L, 3.0L, 160cc"
+                  />
+                </Col>
+                <Col md={6}>
+                  <Form.Label className="mono-sm text-secondary">Make / Brand</Form.Label>
+                  <Form.Control
+                    required={!form.is_universal}
+                    value={form.make}
+                    onChange={set('make')}
+                    placeholder="e.g., Toyota, BMW, Honda"
+                  />
+                </Col>
+                <Col md={6}>
+                  <Form.Label className="mono-sm text-secondary">Model</Form.Label>
+                  <Form.Control
+                    required={!form.is_universal}
+                    value={form.model}
+                    onChange={set('model')}
+                    placeholder="e.g., GR86, M3, Civic Type R"
+                  />
+                </Col>
+                <Col md={6}>
+                  <Form.Label className="mono-sm text-secondary">Compatible Year (Start)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1980"
+                    max="2035"
+                    value={form.year_start}
+                    onChange={set('year_start')}
+                    placeholder="2022"
+                  />
+                </Col>
+                <Col md={6}>
+                  <Form.Label className="mono-sm text-secondary">Compatible Year (End)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1980"
+                    max="2035"
+                    value={form.year_end}
+                    onChange={set('year_end')}
+                    placeholder="2026"
+                  />
+                </Col>
+              </Row>
+            ) : (
+              <p className="text-secondary small mb-0">
+                <i className="bi bi-info-circle me-1" />
+                This item is marked as universal and will be presented with a universal compatibility tag in the store catalog.
+              </p>
+            )}
+          </Card>
+
+          <Row className="g-3">
+            <Col xs={12}>
+              <Form.Label className="mono-sm text-secondary">Custom Fitment Tag (Optional Label Override)</Form.Label>
+              <Form.Control
+                value={form.fitment_details}
+                onChange={set('fitment_details')}
+                placeholder="Leave blank to auto-generate (e.g., TOYOTA GR86 / 2022+)"
+              />
+            </Col>
+          </Row>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="outline-light" onClick={onHide}>Cancel</Button>
-          <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save product'}</Button>
+
+        <Modal.Footer className="border-secondary border-opacity-25">
+          <Button variant="outline-light" onClick={onHide}>
+            Cancel
+          </Button>
+          <Button variant="primary" type="submit" disabled={saving}>
+            {saving ? 'Saving Product...' : isEdit ? 'Update Product' : 'Add Product'}
+          </Button>
         </Modal.Footer>
       </Form>
     </Modal>
