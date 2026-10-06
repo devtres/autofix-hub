@@ -35,3 +35,10 @@
 .badge-healthy { background:rgba(31,157,107,.16); color:#3ecf8e; border:1px solid rgba(62,207,142,.3); }
 .badge-low     { background:$afh-amber; color:$afh-ink; }
 .badge-out     { background:rgba(230,59,47,.18); color:#ff7a70; }
+.badge-pending { background:rgba(254,194,6,.14); color:#fec206; border:1px solid rgba(254,194,6,.3); }
+.badge-confirmed { background:rgba(56,189,248,.14); color:#38bdf8; border:1px solid rgba(56,189,248,.3); }
+.badge-packed { background:rgba(168,85,247,.14); color:#c084fc; border:1px solid rgba(168,85,247,.3); }
+.badge-shipped { background:rgba(20,184,166,.14); color:#2dd4bf; border:1px solid rgba(20,184,166,.3); }
+.badge-out-for-delivery { background:rgba(242,176,74,.14); color:#f2b04a; border:1px solid rgba(242,176,74,.3); }
+.badge-delivered { background:rgba(31,157,107,.16); color:#3ecf8e; border:1px solid rgba(62,207,142,.3); }
+.badge-cancelled { background:rgba(230,59,47,.18); color:#ff7a70; border:1px solid rgba(230,59,47,.3); }

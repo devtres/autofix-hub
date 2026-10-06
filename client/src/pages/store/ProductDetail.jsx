@@ -27,15 +27,15 @@ export default function ProductDetail() {
         if (cancelled) return;
         const staticMatch = PRODUCTS.find((p) => p.product_id === dbProduct.product_id);
         const merged = {
-          description: staticMatch?.description || `${dbProduct.name} is a high-grade performance part engineered for durability and precise fitment.`,
-          type: staticMatch?.type || 'Performance Spec',
-          make: staticMatch?.make || 'OEM / Custom Fitment',
-          model: staticMatch?.model || dbProduct.fitment || 'Various',
-          years: staticMatch?.years || ['All Years'],
-          displacement: staticMatch?.displacement || 'Standard',
-          universal: staticMatch ? staticMatch.universal : true,
           ...staticMatch,
           ...dbProduct,
+          description: dbProduct.description || staticMatch?.description || `${dbProduct.name} is a high-grade performance part engineered for durability and precise fitment.`,
+          type: dbProduct.type || (dbProduct.vehicle_type === 'Car' ? 'Passenger car' : dbProduct.vehicle_type) || staticMatch?.type || (dbProduct.universal ? null : 'Passenger car'),
+          make: dbProduct.make || staticMatch?.make,
+          model: dbProduct.model || staticMatch?.model || dbProduct.fitment,
+          years: dbProduct.years || (dbProduct.year_start ? (dbProduct.year_end && dbProduct.year_end >= dbProduct.year_start ? Array.from({ length: dbProduct.year_end - dbProduct.year_start + 1 }, (_, i) => String(dbProduct.year_start + i)) : [String(dbProduct.year_start)]) : staticMatch?.years) || [],
+          displacement: dbProduct.displacement || staticMatch?.displacement || 'Standard',
+          universal: dbProduct.universal ?? dbProduct.is_universal ?? staticMatch?.universal ?? false,
         };
         setProduct(merged);
         setLoading(false);
@@ -93,8 +93,17 @@ export default function ProductDetail() {
               <div className="detail-price">₱{product.price.toLocaleString()}</div>
               <p className="detail-stock"><span className="tracking-status-dot" /> {product.stock_qty > 0 ? `${product.stock_qty} available` : 'Out of stock'}</p>
               <div className="detail-fitment">
-                <h2>Compatibility</h2><p>{product.fitment}</p>
-                {product.type && <dl><div><dt>Type</dt><dd>{product.type}</dd></div><div><dt>Make</dt><dd>{product.make}</dd></div><div><dt>Model</dt><dd>{product.model}</dd></div><div><dt>Years</dt><dd>{product.years.join(', ')}</dd></div><div><dt>Displacement</dt><dd>{product.displacement}</dd></div></dl>}
+                <h2>Compatibility</h2>
+                <p>{product.fitment || (product.universal ? 'Universal Fitment' : `${product.make || ''} ${product.model || ''}`)}</p>
+                {(!product.universal && (product.make || product.model || product.type)) && (
+                  <dl>
+                    <div><dt>Type</dt><dd>{product.type || 'Passenger car'}</dd></div>
+                    {product.make && <div><dt>Make</dt><dd>{product.make}</dd></div>}
+                    {product.model && <div><dt>Model</dt><dd>{product.model}</dd></div>}
+                    {product.years && product.years.length > 0 && <div><dt>Years</dt><dd>{product.years.join(', ')}</dd></div>}
+                    {product.displacement && <div><dt>Displacement</dt><dd>{product.displacement}</dd></div>}
+                  </dl>
+                )}
                 {product.universal && <p className="mb-0">Universal fit. Check dimensions and installation requirements before purchase.</p>}
               </div>
               <div className="detail-actions"><Button variant="dark" disabled={!product.stock_qty} onClick={() => add(product)}><i className="bi bi-bag-plus" /> Add to garage</Button><Link to="/" className="detail-back">Back to parts</Link></div>
