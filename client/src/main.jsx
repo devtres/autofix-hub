@@ -6,10 +6,11 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './styles/main.scss';
 import App from './App.jsx';
 import { CartProvider } from './context/CartContext.jsx';
+import { VehicleProvider } from './context/VehicleContext.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-        <Auth0Provider
+    <Auth0Provider
       domain={import.meta.env.VITE_AUTH0_DOMAIN}
       clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
       authorizationParams={{
@@ -21,7 +22,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     >
       <BrowserRouter>
         <CartProvider>
-          <App />
+          <VehicleProvider>
+            <App />
+          </VehicleProvider>
         </CartProvider>
       </BrowserRouter>
     </Auth0Provider>

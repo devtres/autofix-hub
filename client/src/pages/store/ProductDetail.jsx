@@ -3,12 +3,14 @@ import { Button, Col, Container, Row, Spinner } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../../components/store/ProductCard';
 import { useCart } from '../../context/CartContext';
+import { useVehicle } from '../../context/VehicleContext';
 import { PRODUCTS } from '../../data/products';
 import { fetchProductById, fetchProducts } from '../../api/products';
 
 export default function ProductDetail() {
   const { productId } = useParams();
   const { add } = useCart();
+  const { selectedVehicle, checkFit } = useVehicle();
   const [product, setProduct] = useState(() => {
     const staticMatch = PRODUCTS.find((item) => item.product_id === Number(productId));
     return staticMatch || null;
@@ -94,6 +96,24 @@ export default function ProductDetail() {
               <p className="detail-stock"><span className="tracking-status-dot" /> {product.stock_qty > 0 ? `${product.stock_qty} available` : 'Out of stock'}</p>
               <div className="detail-fitment">
                 <h2>Compatibility</h2>
+                {selectedVehicle && (
+                  <div
+                    className={`p-2 px-3 rounded-3 mb-3 d-flex align-items-center gap-2 small ${
+                      fit.fits
+                        ? 'bg-success bg-opacity-10 text-success border border-success'
+                        : 'bg-danger bg-opacity-10 text-danger border border-danger'
+                    }`}
+                  >
+                    <i className={`bi ${fit.fits ? 'bi-check-circle-fill' : 'bi-exclamation-octagon-fill'} fs-6`} />
+                    <div>
+                      <strong>{fit.fits ? (fit.isUniversal ? 'Universal Fit' : 'Guaranteed Fit') : 'Does Not Fit'}</strong>
+                      <span className="ms-1">
+                        for your {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                        {fit.label && !fit.fits ? ` (${fit.label})` : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <p>{product.fitment || (product.universal ? 'Universal Fitment' : `${product.make || ''} ${product.model || ''}`)}</p>
                 {(!product.universal && (product.make || product.model || product.type)) && (
                   <dl>
