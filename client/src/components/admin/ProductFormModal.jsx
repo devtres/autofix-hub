@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, Form, Button, Row, Col, Alert, Card } from 'react-bootstrap';
 import { createProduct, updateProduct } from '../../api/products';
+import http from '../../api/http';
 
 const CATEGORIES = ['Brake Systems', 'Suspension', 'Engine', 'Electrical', 'Workshop Tools'];
 
@@ -25,7 +26,15 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [catalogVehicles, setCatalogVehicles] = useState([]);
   const isEdit = !!product;
+
+  useEffect(() => {
+    http
+      .get('/catalog/vehicles')
+      .then((res) => setCatalogVehicles(res.data || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -185,19 +194,66 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
                   <Form.Label className="mono-sm text-secondary">Make / Brand</Form.Label>
                   <Form.Control
                     required={!form.is_universal}
+                    list="admin-makes"
                     value={form.make}
                     onChange={set('make')}
-                    placeholder="e.g., Toyota, BMW, Honda"
+                    placeholder="e.g., Toyota, Honda, BMW"
                   />
+                  <datalist id="admin-makes">
+                    {Array.from(
+                      new Set(
+                        catalogVehicles
+                          .filter((v) => (v.vehicle_type || '').toLowerCase() === (form.vehicle_type || 'Car').toLowerCase())
+                          .map((v) => v.make)
+                      )
+                    )
+                      .sort((a, b) => a.localeCompare(b))
+                      .map((m) => (
+                        <option key={m} value={m} />
+                      ))}
+                  </datalist>
                 </Col>
                 <Col md={6}>
                   <Form.Label className="mono-sm text-secondary">Model</Form.Label>
                   <Form.Control
                     required={!form.is_universal}
+                    list="admin-models"
                     value={form.model}
-                    onChange={set('model')}
-                    placeholder="e.g., GR86, M3, Civic Type R"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const match = catalogVehicles.find(
+                        (v) =>
+                          (v.vehicle_type || '').toLowerCase() === (form.vehicle_type || 'Car').toLowerCase() &&
+                          v.model.toLowerCase() === val.toLowerCase()
+                      );
+                      setForm((prev) => ({
+                        ...prev,
+                        model: val,
+                        make: prev.make || match?.make || prev.make,
+                        year_start: match?.year_start ? String(match.year_start) : prev.year_start,
+                        year_end: match?.year_end ? String(match.year_end) : prev.year_end,
+                        engine_displacement: prev.engine_displacement || match?.engine_displacement || '',
+                      }));
+                    }}
+                    placeholder="e.g., Civic Type R, GR86, Ninja 400"
                   />
+                  <datalist id="admin-models">
+                    {Array.from(
+                      new Set(
+                        catalogVehicles
+                          .filter(
+                            (v) =>
+                              (v.vehicle_type || '').toLowerCase() === (form.vehicle_type || 'Car').toLowerCase() &&
+                              (!form.make || v.make.toLowerCase() === form.make.toLowerCase())
+                          )
+                          .map((v) => v.model)
+                      )
+                    )
+                      .sort((a, b) => a.localeCompare(b))
+                      .map((m) => (
+                        <option key={m} value={m} />
+                      ))}
+                  </datalist>
                 </Col>
                 <Col md={6}>
                   <Form.Label className="mono-sm text-secondary">Compatible Year (Start)</Form.Label>

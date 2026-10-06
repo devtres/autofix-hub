@@ -70,6 +70,31 @@ app.get('/api/products/:id', async (req, res) => {
   }
 });
 
+// Fetch all unique vehicles available in the compatibility catalog
+app.get('/api/catalog/vehicles', async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        vehicle_type, make, model, 
+        MIN(year_start) as year_start, 
+        MAX(year_end) as year_end,
+        engine_displacement
+      FROM (
+        SELECT vehicle_type, make, model, year_start, year_end, engine_displacement FROM vehicles_master
+        UNION ALL
+        SELECT vehicle_type, make, model, year_start, year_end, engine_displacement FROM vehicle_compatibility
+      ) combined
+      WHERE make IS NOT NULL AND model IS NOT NULL
+      GROUP BY vehicle_type, make, model, engine_displacement
+      ORDER BY vehicle_type ASC, make ASC, model ASC
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching catalog vehicles:', error);
+    res.status(500).json({ error: 'Database query error' });
+  }
+});
+
 // Returns the signed-in user's own DB record + role
 app.get('/api/me', checkJwt, syncUser, async (req, res) => {
   res.json(req.dbUser);
