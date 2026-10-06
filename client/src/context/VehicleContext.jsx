@@ -44,10 +44,16 @@ export function VehicleProvider({ children }) {
       selectedVehicle.make &&
       product.make.trim().toLowerCase() === selectedVehicle.make.trim().toLowerCase();
 
+    const cleanStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const pModelClean = cleanStr(product.model);
+    const vModelClean = cleanStr(selectedVehicle.model);
+
     const sameModel =
-      product.model &&
-      selectedVehicle.model &&
-      product.model.trim().toLowerCase() === selectedVehicle.model.trim().toLowerCase();
+      pModelClean &&
+      vModelClean &&
+      (pModelClean === vModelClean ||
+        pModelClean.includes(vModelClean) ||
+        vModelClean.includes(pModelClean));
 
     if (sameMake && sameModel) {
       const vYear = Number(selectedVehicle.year);

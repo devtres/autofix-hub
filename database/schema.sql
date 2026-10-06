@@ -39,6 +39,18 @@ CREATE TABLE IF NOT EXISTS vehicle_compatibility (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
+-- Master Vehicles Catalog (Powers Storefront Vehicle Selector & Admin Suggestions)
+CREATE TABLE IF NOT EXISTS vehicles_master (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_type ENUM('Car', 'Motorcycle') NOT NULL DEFAULT 'Car',
+    make VARCHAR(100) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    year_start INT NOT NULL,
+    year_end INT NOT NULL,
+    engine_displacement VARCHAR(50) DEFAULT NULL,
+    UNIQUE KEY uq_vehicle (vehicle_type, make, model, engine_displacement)
+);
+
 -- Orders Table
 CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,

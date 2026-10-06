@@ -4,11 +4,19 @@ import http from '../../api/http';
 import { useVehicle } from '../../context/VehicleContext';
 
 const PRESETS = [
+  // Performance Cars
+  { vehicle_type: 'Car', make: 'Honda', model: 'Civic Type R', year: 2023, displacement: '2.0L Turbo', label: '2023 Civic Type R' },
   { vehicle_type: 'Car', make: 'Toyota', model: 'GR86', year: 2022, displacement: '2.4L', label: '2022 Toyota GR86' },
+  { vehicle_type: 'Car', make: 'Subaru', model: 'WRX STI', year: 2021, displacement: '2.5L Turbo', label: '2021 Subaru WRX STI' },
+  { vehicle_type: 'Car', make: 'Nissan', model: 'GT-R (R35)', year: 2022, displacement: '3.8L Twin-Turbo', label: '2022 Nissan GT-R' },
   { vehicle_type: 'Car', make: 'BMW', model: 'M3', year: 2023, displacement: '3.0L', label: '2023 BMW M3' },
+  { vehicle_type: 'Car', make: 'Mazda', model: 'MX-5 Miata (ND)', year: 2022, displacement: '2.0L', label: '2022 Mazda MX-5' },
   { vehicle_type: 'Car', make: 'Toyota', model: 'Supra', year: 1998, displacement: '3.0L Twin-Turbo', label: '1998 Toyota Supra' },
-  { vehicle_type: 'Motorcycle', make: 'Honda', model: 'Click 160', year: 2023, displacement: '160cc', label: '2023 Honda Click 160' },
-  { vehicle_type: 'Motorcycle', make: 'Yamaha', model: 'NMAX 155', year: 2022, displacement: '155cc', label: '2022 Yamaha NMAX 155' },
+  // Performance Motorcycles
+  { vehicle_type: 'Motorcycle', make: 'Kawasaki', model: 'Ninja 400', year: 2023, displacement: '399cc', label: '2023 Ninja 400' },
+  { vehicle_type: 'Motorcycle', make: 'Yamaha', model: 'Aerox 155', year: 2022, displacement: '155cc', label: '2022 Aerox 155' },
+  { vehicle_type: 'Motorcycle', make: 'Honda', model: 'Click 160', year: 2023, displacement: '160cc', label: '2023 Click 160' },
+  { vehicle_type: 'Motorcycle', make: 'Yamaha', model: 'NMAX 155', year: 2022, displacement: '155cc', label: '2022 NMAX 155' },
 ];
 
 export default function VehicleSelector() {
@@ -46,7 +54,7 @@ export default function VehicleSelector() {
         .filter((v) => (v.vehicle_type || '').toLowerCase() === vType.toLowerCase())
         .map((v) => v.make)
     )
-  );
+  ).sort((a, b) => a.localeCompare(b));
 
   // Filter models by make
   const availableModels = Array.from(
@@ -59,7 +67,7 @@ export default function VehicleSelector() {
         )
         .map((v) => v.model)
     )
-  );
+  ).sort((a, b) => a.localeCompare(b));
 
   // Available year range for chosen model
   const matchedVehicle = catalogVehicles.find(
@@ -72,9 +80,9 @@ export default function VehicleSelector() {
   const availableYears = matchedVehicle
     ? Array.from(
         { length: (matchedVehicle.year_end || 2026) - (matchedVehicle.year_start || 2020) + 1 },
-        (_, i) => (matchedVehicle.year_start || 2020) + i
+        (_, i) => (matchedVehicle.year_end || 2026) - i
       )
-    : [2021, 2022, 2023, 2024, 2025, 2026];
+    : [2026, 2025, 2024, 2023, 2022, 2021];
 
   const handleApplyPreset = (preset) => {
     setVehicle(preset);
@@ -246,6 +254,14 @@ export default function VehicleSelector() {
                       </option>
                     ))}
                   </Form.Select>
+                  {matchedVehicle && (
+                    <div className="small text-muted d-flex align-items-center gap-2 mt-2">
+                      <span className="badge bg-dark border border-secondary text-white-50 mono-sm">
+                        {matchedVehicle.engine_displacement || 'Standard Engine'}
+                      </span>
+                      <span>Years: {matchedVehicle.year_start}–{matchedVehicle.year_end}</span>
+                    </div>
+                  )}
                 </Col>
 
                 <Col md={12}>

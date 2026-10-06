@@ -74,12 +74,17 @@ app.get('/api/products/:id', async (req, res) => {
 app.get('/api/catalog/vehicles', async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT DISTINCT 
+      SELECT 
         vehicle_type, make, model, 
         MIN(year_start) as year_start, 
         MAX(year_end) as year_end,
         engine_displacement
-      FROM vehicle_compatibility
+      FROM (
+        SELECT vehicle_type, make, model, year_start, year_end, engine_displacement FROM vehicles_master
+        UNION ALL
+        SELECT vehicle_type, make, model, year_start, year_end, engine_displacement FROM vehicle_compatibility
+      ) combined
+      WHERE make IS NOT NULL AND model IS NOT NULL
       GROUP BY vehicle_type, make, model, engine_displacement
       ORDER BY vehicle_type ASC, make ASC, model ASC
     `);
