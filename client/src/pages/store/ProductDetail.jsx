@@ -86,7 +86,28 @@ export default function ProductDetail() {
       <Container className="py-4 py-md-5">
         <p className="eyebrow"><Link to="/">Shop parts</Link> / {product.category}</p>
         <Row className="g-4 g-lg-5 align-items-start detail-layout">
-          <Col lg={6}><div className="detail-visual" style={{ '--accent': product.accent_color }}><span className="mono-sm">{product.category}</span><i className="bi bi-box-seam" /><span className="detail-sku mono-sm">{product.sku}</span></div></Col>
+          <Col lg={6}>
+            <div className="detail-visual" style={{ '--accent': product.accent_color }}>
+              {product.image_url ? (
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="detail-visual-img"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const icon = e.currentTarget.parentElement?.querySelector('.detail-fallback-icon');
+                    if (icon) icon.style.display = 'block';
+                  }}
+                />
+              ) : null}
+              <span className="mono-sm">{product.category}</span>
+              <i
+                className="bi bi-box-seam detail-fallback-icon"
+                style={{ display: product.image_url ? 'none' : 'block' }}
+              />
+              <span className="detail-sku mono-sm">{product.sku}</span>
+            </div>
+          </Col>
           <Col lg={6}>
             <div className="detail-copy">
               <p className="mono-sm text-muted mb-2">{product.sku} · {product.fitment}</p>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Form, Button, Row, Col, Alert, Card } from 'react-bootstrap';
-import { createProduct, updateProduct } from '../../api/products';
+import { Modal, Form, Button, Row, Col, Alert, Card, Spinner } from 'react-bootstrap';
+import { createProduct, updateProduct, deleteProduct } from '../../api/products';
 import http from '../../api/http';
 
 const CATEGORIES = ['Brake Systems', 'Suspension', 'Engine', 'Electrical', 'Workshop Tools'];
@@ -20,11 +20,13 @@ const EMPTY = {
   year_start: '2022',
   year_end: '2026',
   engine_displacement: '',
+  image_url: '',
 };
 
 export default function ProductFormModal({ show, onHide, onSaved, product }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [catalogVehicles, setCatalogVehicles] = useState([]);
   const isEdit = !!product;
@@ -53,6 +55,7 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
         year_start: product.year_start ? String(product.year_start) : '',
         year_end: product.year_end ? String(product.year_end) : '',
         engine_displacement: product.displacement || product.engine_displacement || '',
+        image_url: product.image_url || '',
       });
     } else {
       setForm(EMPTY);
@@ -83,6 +86,7 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
         is_universal: form.is_universal,
         price: Number(form.price),
         stock: Number(form.stock),
+        image_url: form.image_url?.trim() || null,
         compatibility: form.is_universal
           ? null
           : {
@@ -108,6 +112,27 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
       setError(err.response?.data?.error || 'Something went wrong while saving product.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!product) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${product.name}" (${product.sku})? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError(null);
+    try {
+      await deleteProduct(product.product_id);
+      onSaved();
+      onHide();
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      setError(err.response?.data?.error || 'Failed to delete product.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -286,6 +311,56 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
             )}
           </Card>
 
+          {/* Section 3: Product Imagery */}
+          <span className="eyebrow text-secondary d-block mb-2">3. Product Media</span>
+          <Card className="bg-black border-secondary border-opacity-25 p-3 mb-3">
+            <Row className="g-3 align-items-center">
+              <Col md={8}>
+                <Form.Label className="mono-sm text-secondary">Image Path or URL</Form.Label>
+                <Form.Control
+                  value={form.image_url}
+                  onChange={set('image_url')}
+                  placeholder="e.g., /images/products/apex-ceramic-brake.jpg or https://..."
+                />
+                <Form.Text className="text-secondary small">
+                  Supports local paths in public folder (e.g. <code>/images/products/...</code>) or external HTTPS URLs.
+                </Form.Text>
+              </Col>
+              <Col md={4}>
+                <div className="text-center">
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '80px',
+                      borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {form.image_url ? (
+                      <img
+                        src={form.image_url}
+                        alt="Preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span className="mono-sm text-secondary" style={{ fontSize: '.6rem' }}>
+                        <i className="bi bi-image d-block fs-5 opacity-50 mb-1" />
+                        No image preview
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
           <Row className="g-3">
             <Col xs={12}>
               <Form.Label className="mono-sm text-secondary">Custom Fitment Tag (Optional Label Override)</Form.Label>
@@ -298,13 +373,35 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
           </Row>
         </Modal.Body>
 
-        <Modal.Footer className="border-secondary border-opacity-25">
-          <Button variant="outline-light" onClick={onHide}>
-            Cancel
-          </Button>
-          <Button variant="primary" type="submit" disabled={saving}>
-            {saving ? 'Saving Product...' : isEdit ? 'Update Product' : 'Add Product'}
-          </Button>
+        <Modal.Footer className="border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+          {isEdit ? (
+            <Button
+              variant="outline-danger"
+              disabled={saving || deleting}
+              onClick={handleDelete}
+              type="button"
+            >
+              {deleting ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-1" /> Deleting...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-trash3 me-1" /> Delete Product
+                </>
+              )}
+            </Button>
+          ) : (
+            <div />
+          )}
+          <div className="d-flex gap-2">
+            <Button variant="outline-light" onClick={onHide} disabled={saving || deleting}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={saving || deleting}>
+              {saving ? 'Saving Product...' : isEdit ? 'Update Product' : 'Add Product'}
+            </Button>
+          </div>
         </Modal.Footer>
       </Form>
     </Modal>

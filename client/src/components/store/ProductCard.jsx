@@ -16,6 +16,19 @@ export default function ProductCard({ p }) {
       style={{ '--accent': p.accent_color }}
     >
       <div className="thumb">
+        {p.image_url && (
+          <img
+            src={p.image_url}
+            alt={p.name}
+            className="product-thumb-img"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const tile = e.currentTarget.parentElement?.querySelector('.box-tile');
+              if (tile) tile.style.display = 'grid';
+            }}
+          />
+        )}
         <span className="mono-sm cat">{p.category}</span>
         {low && <span className="low-tag">Low stock</span>}
 
@@ -48,7 +61,7 @@ export default function ProductCard({ p }) {
         >
           <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
         </button>
-        <span className="box-tile">
+        <span className="box-tile" style={{ display: p.image_url ? 'none' : 'grid' }}>
           <i className={`bi bi-box-seam ${low ? 'text-warning' : ''}`} />
         </span>
       </div>

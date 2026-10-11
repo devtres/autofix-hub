@@ -24,7 +24,35 @@ export default function CartDrawer() {
           <>
             {items.map((i) => (
               <div key={i.product_id} className="cart-line py-3 border-bottom">
-                <div className="d-flex justify-content-between align-items-start gap-2"><div><b className="d-block small">{i.name}</b><span className="mono-sm text-muted">₱{i.price.toLocaleString()} each</span></div>
+                <div className="d-flex justify-content-between align-items-start gap-2">
+                  <div className="d-flex align-items-center gap-2">
+                    {i.image_url ? (
+                      <img
+                        src={i.image_url}
+                        alt={i.name}
+                        style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 8,
+                          background: '#161a1b',
+                          display: 'grid',
+                          placeItems: 'center',
+                          color: '#f4f0e9',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <i className="bi bi-box-seam" />
+                      </div>
+                    )}
+                    <div>
+                      <b className="d-block small">{i.name}</b>
+                      <span className="mono-sm text-muted">₱{i.price.toLocaleString()} each</span>
+                    </div>
+                  </div>
                   <Button size="sm" variant="link" className="text-danger p-1" aria-label={`Remove ${i.name}`} onClick={() => remove(i.product_id)}><i className="bi bi-trash3" /></Button>
                 </div>
                 <div className="d-flex justify-content-between align-items-center mt-2"><div className="quantity-stepper" aria-label={`Quantity for ${i.name}`}>

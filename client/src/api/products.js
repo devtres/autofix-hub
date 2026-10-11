@@ -30,6 +30,7 @@ function mapProduct(row) {
     description: row.description,
     category: row.category,
     fitment: row.fitment_details,
+    image_url: row.image_url || null,
     price: Number(row.price),
     stock_qty: row.stock,
     low_stock_threshold: row.is_low_stock ? row.stock : 10,
@@ -71,5 +72,10 @@ export async function createProduct(payload) {
 
 export async function updateProduct(id, payload) {
   const { data } = await http.put(`/products/${id}`, payload);
+  return data;
+}
+
+export async function deleteProduct(id) {
+  const { data } = await http.delete(`/products/${id}`);
   return data;
 }

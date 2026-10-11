@@ -1,8 +1,8 @@
 USE autofix_hub;
 
 -- Insert Seed Product matching team ENUM categories
-INSERT INTO products (id, sku, name, category, fitment_details, price, stock, is_low_stock)
-VALUES (1, 'BRK-PAD-001', 'Brembo Ceramic Brake Pads', 'Brake Systems', 'Toyota Vios 2018-2024 1.3L', 1450.00, 25, FALSE)
+INSERT INTO products (id, sku, name, category, fitment_details, image_url, price, stock, is_low_stock)
+VALUES (1, 'BRK-PAD-001', 'Brembo Ceramic Brake Pads', 'Brake Systems', 'Toyota Vios 2018-2024 1.3L', '/images/products/apex-ceramic-brake.jpg', 1450.00, 25, FALSE)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- Insert Seed Vehicle Compatibility

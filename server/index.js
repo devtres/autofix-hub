@@ -330,6 +330,7 @@ app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, 
       price,
       stock,
       compatibility,
+      image_url,
     } = req.body;
 
     if (!sku || !name || !category || price == null) {
@@ -348,8 +349,8 @@ app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, 
 
     const [result] = await connection.query(
       `INSERT INTO products 
-       (sku, name, description, category, fitment_details, is_universal, price, stock, is_low_stock) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (sku, name, description, category, fitment_details, is_universal, price, stock, is_low_stock, image_url) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         sku,
         name,
@@ -360,6 +361,7 @@ app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, 
         price,
         stock || 0,
         (stock || 0) <= 10 ? 1 : 0,
+        image_url || null,
       ]
     );
 
@@ -413,6 +415,7 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
       price,
       stock,
       compatibility,
+      image_url,
     } = req.body;
 
     const universalFlag = !!is_universal;
@@ -426,7 +429,7 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
 
     await connection.query(
       `UPDATE products 
-       SET sku=?, name=?, description=?, category=?, fitment_details=?, is_universal=?, price=?, stock=?, is_low_stock=? 
+       SET sku=?, name=?, description=?, category=?, fitment_details=?, is_universal=?, price=?, stock=?, is_low_stock=?, image_url=? 
        WHERE id=?`,
       [
         sku,
@@ -438,6 +441,7 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
         price,
         stock,
         stock <= 10 ? 1 : 0,
+        image_url !== undefined ? image_url : null,
         id,
       ]
     );
@@ -467,6 +471,44 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
   } catch (error) {
     await connection.rollback();
     console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Database query error' });
+  } finally {
+    connection.release();
+  }
+});
+
+// Delete an existing product (admin only)
+app.delete('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (req, res) => {
+  const { id } = req.params;
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [existing] = await connection.query('SELECT id, name, sku FROM products WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const [orderCheck] = await connection.query(
+      'SELECT COUNT(*) as count FROM order_items WHERE product_id = ?',
+      [id]
+    );
+    if (orderCheck[0].count > 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        error: `Cannot delete "${existing[0].name}" because it is referenced in ${orderCheck[0].count} existing customer order item(s). Set stock to 0 to discontinue instead.`,
+      });
+    }
+
+    await connection.query('DELETE FROM vehicle_compatibility WHERE product_id = ?', [id]);
+    await connection.query('DELETE FROM products WHERE id = ?', [id]);
+
+    await connection.commit();
+    res.json({ message: 'Product deleted successfully', id: Number(id) });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error deleting product:', error);
     res.status(500).json({ error: 'Database query error' });
   } finally {
     connection.release();
