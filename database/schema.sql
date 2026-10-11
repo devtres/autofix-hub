@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     category ENUM('Brake Systems', 'Suspension', 'Engine', 'Electrical', 'Workshop Tools') NOT NULL,
     fitment_details VARCHAR(255),
+    image_url VARCHAR(500) DEFAULT NULL,
     is_universal BOOLEAN DEFAULT FALSE,
     price DECIMAL(10, 2) NOT NULL,
     stock INT NOT NULL DEFAULT 0,

@@ -330,6 +330,7 @@ app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, 
       price,
       stock,
       compatibility,
+      image_url,
     } = req.body;
 
     if (!sku || !name || !category || price == null) {
@@ -348,8 +349,8 @@ app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, 
 
     const [result] = await connection.query(
       `INSERT INTO products 
-       (sku, name, description, category, fitment_details, is_universal, price, stock, is_low_stock) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (sku, name, description, category, fitment_details, is_universal, price, stock, is_low_stock, image_url) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         sku,
         name,
@@ -360,6 +361,7 @@ app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, 
         price,
         stock || 0,
         (stock || 0) <= 10 ? 1 : 0,
+        image_url || null,
       ]
     );
 
@@ -413,6 +415,7 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
       price,
       stock,
       compatibility,
+      image_url,
     } = req.body;
 
     const universalFlag = !!is_universal;
@@ -426,7 +429,7 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
 
     await connection.query(
       `UPDATE products 
-       SET sku=?, name=?, description=?, category=?, fitment_details=?, is_universal=?, price=?, stock=?, is_low_stock=? 
+       SET sku=?, name=?, description=?, category=?, fitment_details=?, is_universal=?, price=?, stock=?, is_low_stock=?, image_url=? 
        WHERE id=?`,
       [
         sku,
@@ -438,6 +441,7 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
         price,
         stock,
         stock <= 10 ? 1 : 0,
+        image_url !== undefined ? image_url : null,
         id,
       ]
     );

@@ -282,10 +282,36 @@ export default function Products() {
                   {list.map((p) => (
                     <tr key={p.product_id} role="button" onClick={() => openEdit(p)}>
                       <td>
-                        <b className="d-block small text-white">{p.name}</b>
-                        <span className="mono-sm text-secondary" style={{ fontSize: '.55rem' }}>
-                          {p.sku} · {p.fitment || (p.is_universal ? 'Universal' : 'General Fitment')}
-                        </span>
+                        <div className="d-flex align-items-center gap-2">
+                          {p.image_url ? (
+                            <img
+                              src={p.image_url}
+                              alt={p.name}
+                              style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 6,
+                                background: 'rgba(255,255,255,0.06)',
+                                display: 'grid',
+                                placeItems: 'center',
+                                flexShrink: 0,
+                                color: 'rgba(255,255,255,0.4)',
+                              }}
+                            >
+                              <i className="bi bi-box-seam" />
+                            </div>
+                          )}
+                          <div>
+                            <b className="d-block small text-white">{p.name}</b>
+                            <span className="mono-sm text-secondary" style={{ fontSize: '.55rem' }}>
+                              {p.sku} · {p.fitment || (p.is_universal ? 'Universal' : 'General Fitment')}
+                            </span>
+                          </div>
+                        </div>
                       </td>
                       <td className="small">{p.category}</td>
                       <td className="small text-white fw-bold">₱{p.price.toLocaleString()}</td>
@@ -340,11 +366,35 @@ export default function Products() {
               {list.map((p) => (
                 <div key={p.product_id} className="mobile-row" role="button" onClick={() => openEdit(p)}>
                   <div className="d-flex justify-content-between align-items-start gap-2">
-                    <div>
-                      <b className="d-block small text-white">{p.name}</b>
-                      <span className="mono-sm text-secondary" style={{ fontSize: '.55rem' }}>
-                        {p.sku} · {p.fitment || (p.is_universal ? 'Universal' : 'General Fitment')}
-                      </span>
+                    <div className="d-flex align-items-center gap-2">
+                      {p.image_url ? (
+                        <img
+                          src={p.image_url}
+                          alt={p.name}
+                          style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 6,
+                            background: 'rgba(255,255,255,0.06)',
+                            display: 'grid',
+                            placeItems: 'center',
+                            flexShrink: 0,
+                            color: 'rgba(255,255,255,0.4)',
+                          }}
+                        >
+                          <i className="bi bi-box-seam" />
+                        </div>
+                      )}
+                      <div>
+                        <b className="d-block small text-white">{p.name}</b>
+                        <span className="mono-sm text-secondary" style={{ fontSize: '.55rem' }}>
+                          {p.sku} · {p.fitment || (p.is_universal ? 'Universal' : 'General Fitment')}
+                        </span>
+                      </div>
                     </div>
                     <StatusBadge stock={p.stock_qty} isLow={p.is_low_stock} />
                   </div>

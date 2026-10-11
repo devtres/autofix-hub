@@ -20,6 +20,7 @@ const EMPTY = {
   year_start: '2022',
   year_end: '2026',
   engine_displacement: '',
+  image_url: '',
 };
 
 export default function ProductFormModal({ show, onHide, onSaved, product }) {
@@ -54,6 +55,7 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
         year_start: product.year_start ? String(product.year_start) : '',
         year_end: product.year_end ? String(product.year_end) : '',
         engine_displacement: product.displacement || product.engine_displacement || '',
+        image_url: product.image_url || '',
       });
     } else {
       setForm(EMPTY);
@@ -84,6 +86,7 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
         is_universal: form.is_universal,
         price: Number(form.price),
         stock: Number(form.stock),
+        image_url: form.image_url?.trim() || null,
         compatibility: form.is_universal
           ? null
           : {
@@ -306,6 +309,56 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
                 This item is marked as universal and will be presented with a universal compatibility tag in the store catalog.
               </p>
             )}
+          </Card>
+
+          {/* Section 3: Product Imagery */}
+          <span className="eyebrow text-secondary d-block mb-2">3. Product Media</span>
+          <Card className="bg-black border-secondary border-opacity-25 p-3 mb-3">
+            <Row className="g-3 align-items-center">
+              <Col md={8}>
+                <Form.Label className="mono-sm text-secondary">Image Path or URL</Form.Label>
+                <Form.Control
+                  value={form.image_url}
+                  onChange={set('image_url')}
+                  placeholder="e.g., /images/products/apex-ceramic-brake.jpg or https://..."
+                />
+                <Form.Text className="text-secondary small">
+                  Supports local paths in public folder (e.g. <code>/images/products/...</code>) or external HTTPS URLs.
+                </Form.Text>
+              </Col>
+              <Col md={4}>
+                <div className="text-center">
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '80px',
+                      borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {form.image_url ? (
+                      <img
+                        src={form.image_url}
+                        alt="Preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span className="mono-sm text-secondary" style={{ fontSize: '.6rem' }}>
+                        <i className="bi bi-image d-block fs-5 opacity-50 mb-1" />
+                        No image preview
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Col>
+            </Row>
           </Card>
 
           <Row className="g-3">
