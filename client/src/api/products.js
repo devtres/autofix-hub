@@ -73,3 +73,8 @@ export async function updateProduct(id, payload) {
   const { data } = await http.put(`/products/${id}`, payload);
   return data;
 }
+
+export async function deleteProduct(id) {
+  const { data } = await http.delete(`/products/${id}`);
+  return data;
+}

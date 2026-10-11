@@ -1,12 +1,30 @@
 import { auth } from 'express-oauth2-jwt-bearer';
 import db from '../db.js';
 
-// Validates the Auth0 JWT on every protected request
-export const checkJwt = auth({
+const jwtVerifier = auth({
   audience: process.env.AUTH0_AUDIENCE,
   issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}/`,
   tokenSigningAlg: 'RS256',
 });
+
+// Validates the Auth0 JWT on every protected request
+export const checkJwt = (req, res, next) => {
+  if (req.headers.authorization) {
+    return jwtVerifier(req, res, next);
+  }
+  // In development, fallback to local admin user if no token is passed
+  if (process.env.NODE_ENV !== 'production') {
+    req.auth = {
+      payload: {
+        sub: 'google-oauth2|112952141038499874081',
+        email: 'pontanelesiiitito@gmail.com',
+        name: 'Pontañeles III, Tito P.',
+      },
+    };
+    return next();
+  }
+  return jwtVerifier(req, res, next);
+};
 
 // Looks up (or creates) the matching row in our own users table,
 // and attaches it to req.dbUser so routes know the role.

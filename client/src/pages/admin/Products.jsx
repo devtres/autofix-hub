@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Button, Form, InputGroup, Table, Spinner, Alert, Badge, Row, Col, Collapse } from 'react-bootstrap';
-import { fetchProducts } from '../../api/products';
+import { fetchProducts, deleteProduct } from '../../api/products';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ProductFormModal from '../../components/admin/ProductFormModal';
 
@@ -37,6 +37,22 @@ export default function Products() {
   const openEdit = (p) => {
     setEditing(p);
     setShowModal(true);
+  };
+
+  const handleDeleteDirect = async (p, e) => {
+    if (e) e.stopPropagation();
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${p.name}" (${p.sku})? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteProduct(p.product_id);
+      load();
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      alert(err.response?.data?.error || 'Failed to delete product.');
+    }
   };
 
   const resetFilters = () => {
@@ -259,6 +275,7 @@ export default function Products() {
                     <th>Price</th>
                     <th>Stock</th>
                     <th>Status</th>
+                    <th className="text-end" style={{ width: '100px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -276,11 +293,33 @@ export default function Products() {
                       <td>
                         <StatusBadge stock={p.stock_qty} isLow={p.is_low_stock} />
                       </td>
+                      <td className="text-end">
+                        <div className="d-flex justify-content-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            className="p-1 px-2"
+                            title="Edit product"
+                            onClick={() => openEdit(p)}
+                          >
+                            <i className="bi bi-pencil" />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            className="p-1 px-2"
+                            title="Delete product"
+                            onClick={(e) => handleDeleteDirect(p, e)}
+                          >
+                            <i className="bi bi-trash3" />
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {list.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-5 text-secondary">
+                      <td colSpan={6} className="text-center py-5 text-secondary">
                         <i className="bi bi-box-seam fs-2 d-block mb-2 opacity-50" />
                         <h6 className="fw-bold">No products match your criteria</h6>
                         <p className="small mb-3">Try adjusting your search keywords or active filters.</p>
@@ -314,6 +353,20 @@ export default function Products() {
                     <span className="text-white fw-bold">
                       ₱{p.price.toLocaleString()} · Stock {p.stock_qty}
                     </span>
+                  </div>
+                  <div
+                    className="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary border-opacity-10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="mono-sm text-secondary" style={{ fontSize: '.55rem' }}>Actions</span>
+                    <div className="d-flex gap-1">
+                      <Button variant="outline-secondary" size="sm" className="py-0 px-2 small" onClick={() => openEdit(p)}>
+                        <i className="bi bi-pencil me-1" /> Edit
+                      </Button>
+                      <Button variant="outline-danger" size="sm" className="py-0 px-2 small" onClick={(e) => handleDeleteDirect(p, e)}>
+                        <i className="bi bi-trash3 me-1" /> Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}

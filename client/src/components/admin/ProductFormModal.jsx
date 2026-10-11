@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Form, Button, Row, Col, Alert, Card } from 'react-bootstrap';
-import { createProduct, updateProduct } from '../../api/products';
+import { Modal, Form, Button, Row, Col, Alert, Card, Spinner } from 'react-bootstrap';
+import { createProduct, updateProduct, deleteProduct } from '../../api/products';
 import http from '../../api/http';
 
 const CATEGORIES = ['Brake Systems', 'Suspension', 'Engine', 'Electrical', 'Workshop Tools'];
@@ -25,6 +25,7 @@ const EMPTY = {
 export default function ProductFormModal({ show, onHide, onSaved, product }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [catalogVehicles, setCatalogVehicles] = useState([]);
   const isEdit = !!product;
@@ -108,6 +109,27 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
       setError(err.response?.data?.error || 'Something went wrong while saving product.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!product) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${product.name}" (${product.sku})? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError(null);
+    try {
+      await deleteProduct(product.product_id);
+      onSaved();
+      onHide();
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      setError(err.response?.data?.error || 'Failed to delete product.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -298,13 +320,35 @@ export default function ProductFormModal({ show, onHide, onSaved, product }) {
           </Row>
         </Modal.Body>
 
-        <Modal.Footer className="border-secondary border-opacity-25">
-          <Button variant="outline-light" onClick={onHide}>
-            Cancel
-          </Button>
-          <Button variant="primary" type="submit" disabled={saving}>
-            {saving ? 'Saving Product...' : isEdit ? 'Update Product' : 'Add Product'}
-          </Button>
+        <Modal.Footer className="border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+          {isEdit ? (
+            <Button
+              variant="outline-danger"
+              disabled={saving || deleting}
+              onClick={handleDelete}
+              type="button"
+            >
+              {deleting ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-1" /> Deleting...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-trash3 me-1" /> Delete Product
+                </>
+              )}
+            </Button>
+          ) : (
+            <div />
+          )}
+          <div className="d-flex gap-2">
+            <Button variant="outline-light" onClick={onHide} disabled={saving || deleting}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={saving || deleting}>
+              {saving ? 'Saving Product...' : isEdit ? 'Update Product' : 'Add Product'}
+            </Button>
+          </div>
         </Modal.Footer>
       </Form>
     </Modal>
