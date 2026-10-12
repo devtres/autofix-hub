@@ -6,13 +6,14 @@ import { useVehicle } from '../../context/VehicleContext';
 export default function ProductCard({ p }) {
   const { add, wishlist, toggleWishlist } = useCart();
   const { selectedVehicle, checkFit } = useVehicle();
-  const low = p.is_low_stock;
+  const outOfStock = p.stock_qty === 0;
+  const low = !outOfStock && (p.is_low_stock || p.stock_qty <= 10);
   const saved = wishlist.some((item) => item.product_id === p.product_id);
   const fit = checkFit(p);
 
   return (
     <Card
-      className={`product-card ${selectedVehicle && !fit.fits ? 'is-incompatible' : ''}`}
+      className={`product-card ${selectedVehicle && !fit.fits ? 'is-incompatible' : ''} ${outOfStock ? 'is-out-of-stock' : ''}`}
       style={{ '--accent': p.accent_color }}
     >
       <div className="thumb">
@@ -30,7 +31,11 @@ export default function ProductCard({ p }) {
           />
         )}
         <span className="mono-sm cat">{p.category}</span>
-        {low && <span className="low-tag">Low stock</span>}
+        {outOfStock ? (
+          <span className="out-tag">Out of stock</span>
+        ) : low ? (
+          <span className="low-tag">Low stock</span>
+        ) : null}
 
         {/* Fitment Status Tag */}
         {selectedVehicle ? (
@@ -62,7 +67,7 @@ export default function ProductCard({ p }) {
           <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
         </button>
         <span className="box-tile" style={{ display: p.image_url ? 'none' : 'grid' }}>
-          <i className={`bi bi-box-seam ${low ? 'text-warning' : ''}`} />
+          <i className={`bi bi-box-seam ${outOfStock ? 'text-danger' : low ? 'text-warning' : ''}`} />
         </span>
       </div>
       <Card.Body>
@@ -86,8 +91,13 @@ export default function ProductCard({ p }) {
             >
               <i className="bi bi-arrow-up-right" />
             </Button>
-            <Button size="sm" variant="dark" disabled={p.stock_qty === 0} onClick={() => add(p)}>
-              + Add
+            <Button
+              size="sm"
+              variant={outOfStock ? 'outline-secondary' : 'dark'}
+              disabled={outOfStock}
+              onClick={() => add(p)}
+            >
+              {outOfStock ? 'Sold out' : '+ Add'}
             </Button>
           </div>
         </div>

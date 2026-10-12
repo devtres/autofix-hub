@@ -30,8 +30,10 @@
 .detail-copy h1 { margin:0 0 1rem; font-size:2.6rem; }
 .detail-description { max-width:38rem; color:rgba(22,26,27,.72); line-height:1.65; }
 .detail-price { margin:1.25rem 0 .5rem; font-size:1.6rem; font-weight:800; }
-.detail-stock { display:flex; align-items:center; gap:.55rem; color:rgba(22,26,27,.7); font-size:.8rem; }
-.detail-stock .tracking-status-dot { background:$afh-green; box-shadow:0 0 0 3px rgba(31,157,107,.14); }
+.detail-stock { display:flex; align-items:center; gap:.55rem; color:rgba(22,26,27,.7); font-size:.8rem;
+  .tracking-status-dot { background:$afh-green; box-shadow:0 0 0 3px rgba(31,157,107,.14); }
+  &.is-out { color:#c93b3b; font-weight:600;
+    .tracking-status-dot.dot-out { background:#c93b3b; box-shadow:0 0 0 3px rgba(201,59,59,.16); } } }
 .detail-fitment { margin-top:1.25rem; padding:1rem; border:1px solid rgba(22,26,27,.14); background:#f8f5ef;
   h2 { margin-bottom:.55rem; font-size:.92rem; font-weight:700; }
   p { color:rgba(22,26,27,.68); font-size:.82rem; }

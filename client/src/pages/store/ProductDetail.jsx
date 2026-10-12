@@ -114,7 +114,10 @@ export default function ProductDetail() {
               <h1 className="display-cond">{product.name}</h1>
               <p className="detail-description">{product.description}</p>
               <div className="detail-price">₱{product.price.toLocaleString()}</div>
-              <p className="detail-stock"><span className="tracking-status-dot" /> {product.stock_qty > 0 ? `${product.stock_qty} available` : 'Out of stock'}</p>
+              <p className={`detail-stock ${!product.stock_qty ? 'is-out' : ''}`}>
+                <span className={`tracking-status-dot ${!product.stock_qty ? 'dot-out' : ''}`} />
+                {product.stock_qty > 0 ? `${product.stock_qty} available` : 'Out of stock'}
+              </p>
               <div className="detail-fitment">
                 <h2>Compatibility</h2>
                 {selectedVehicle && (
@@ -147,7 +150,17 @@ export default function ProductDetail() {
                 )}
                 {product.universal && <p className="mb-0">Universal fit. Check dimensions and installation requirements before purchase.</p>}
               </div>
-              <div className="detail-actions"><Button variant="dark" disabled={!product.stock_qty} onClick={() => add(product)}><i className="bi bi-bag-plus" /> Add to garage</Button><Link to="/" className="detail-back">Back to parts</Link></div>
+              <div className="detail-actions">
+                <Button
+                  variant={!product.stock_qty ? 'outline-secondary' : 'dark'}
+                  disabled={!product.stock_qty}
+                  onClick={() => add(product)}
+                >
+                  <i className={`bi ${!product.stock_qty ? 'bi-slash-circle' : 'bi-bag-plus'} me-1`} />
+                  {!product.stock_qty ? 'Out of stock' : 'Add to garage'}
+                </Button>
+                <Link to="/" className="detail-back">Back to parts</Link>
+              </div>
             </div>
           </Col>
         </Row>

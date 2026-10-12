@@ -360,7 +360,7 @@ app.post('/api/products', checkJwt, syncUser, requireRole('admin'), async (req, 
         universalFlag ? 1 : 0,
         price,
         stock || 0,
-        (stock || 0) <= 10 ? 1 : 0,
+        (stock || 0) > 0 && (stock || 0) <= 10 ? 1 : 0,
         image_url || null,
       ]
     );
@@ -440,7 +440,7 @@ app.put('/api/products/:id', checkJwt, syncUser, requireRole('admin'), async (re
         universalFlag ? 1 : 0,
         price,
         stock,
-        stock <= 10 ? 1 : 0,
+        stock > 0 && stock <= 10 ? 1 : 0,
         image_url !== undefined ? image_url : null,
         id,
       ]
