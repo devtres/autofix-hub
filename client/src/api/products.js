@@ -1,0 +1,81 @@
+import http from './http';
+
+// Maps text categories from the DB to the gradient colors the cards use.
+// This replaces the categories.accent_color column that doesn't exist yet.
+const CATEGORY_ACCENTS = {
+  'Brake Systems': '#3F1617',
+  'Suspension': '#3C2C1A',
+  'Engine': '#173446',
+  'Electrical': '#351D41',
+  'Workshop Tools': '#163C2C',
+};
+
+// Converts one raw DB row into the shape the UI components expect.
+function mapProduct(row) {
+  const isUniversal = !!row.is_universal;
+  const startYear = row.year_start ? Number(row.year_start) : null;
+  const endYear = row.year_end ? Number(row.year_end) : null;
+  let yearArray = null;
+
+  if (startYear && endYear && endYear >= startYear) {
+    yearArray = Array.from({ length: endYear - startYear + 1 }, (_, i) => String(startYear + i));
+  } else if (startYear) {
+    yearArray = [String(startYear)];
+  }
+
+  return {
+    product_id: row.id,
+    sku: row.sku,
+    name: row.name,
+    description: row.description,
+    category: row.category,
+    fitment: row.fitment_details,
+    image_url: row.image_url || null,
+    price: Number(row.price),
+    stock_qty: row.stock,
+    low_stock_threshold: row.is_low_stock ? row.stock : 10,
+    is_low_stock: !!row.is_low_stock,
+    accent_color: CATEGORY_ACCENTS[row.category] || '#222222',
+    is_universal: isUniversal,
+    universal: isUniversal,
+    vehicle_type: row.vehicle_type || (isUniversal ? null : 'Car'),
+    type: row.vehicle_type ? (row.vehicle_type === 'Car' ? 'Passenger car' : row.vehicle_type) : null,
+    make: row.make || null,
+    model: row.model || null,
+    year_start: startYear,
+    year_end: endYear,
+    years: yearArray,
+    displacement: row.engine_displacement || null,
+    engine_displacement: row.engine_displacement || null,
+  };
+}
+
+export async function fetchProducts() {
+  const { data } = await http.get('/products');
+  return data.map(mapProduct);
+}
+
+export async function fetchProductsByCategory(category) {
+  const { data } = await http.get(`/products/category/${encodeURIComponent(category)}`);
+  return data.map(mapProduct);
+}
+
+export async function fetchProductById(id) {
+  const { data } = await http.get(`/products/${id}`);
+  return mapProduct(data);
+}
+
+export async function createProduct(payload) {
+  const { data } = await http.post('/products', payload);
+  return data;
+}
+
+export async function updateProduct(id, payload) {
+  const { data } = await http.put(`/products/${id}`, payload);
+  return data;
+}
+
+export async function deleteProduct(id) {
+  const { data } = await http.delete(`/products/${id}`);
+  return data;
+}

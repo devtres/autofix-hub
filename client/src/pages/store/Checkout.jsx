@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Col, Container, Form, Row } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useCart } from '../../context/CartContext';
 import { createOrder, saveOrder } from '../../utils/orders';
+import { createOrderApi } from '../../api/orders';
 import { PHILIPPINE_LOCATIONS } from '../../utils/philippineLocations';
 
 const INITIAL_CUSTOMER = {
@@ -17,12 +19,24 @@ const INITIAL_CUSTOMER = {
 
 export default function Checkout() {
   const { items, subtotal, clear } = useCart();
+  const { user, isAuthenticated } = useAuth0();
   const navigate = useNavigate();
   const [customer, setCustomer] = useState(INITIAL_CUSTOMER);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setCustomer((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.name || '',
+        email: prev.email || user.email || '',
+      }));
+    }
+  }, [isAuthenticated, user]);
   const [shippingMethod, setShippingMethod] = useState('Standard');
   const [voucherApplied, setVoucherApplied] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const shippingFee = shippingMethod === 'Express' ? 189 : 99;
   const discount = voucherApplied && subtotal >= 1000 ? 100 : 0;
 
@@ -30,16 +44,44 @@ export default function Checkout() {
     setCustomer((value) => ({ ...value, [event.target.name]: event.target.value }));
   }
 
-  function placeOrder(event) {
+  async function placeOrder(event) {
     event.preventDefault();
-    if (!items.length) return;
+    if (!items.length || submitting) return;
+    setError('');
+    setSubmitting(true);
+
     try {
       const order = createOrder({ customer, items, subtotal, shippingMethod, shippingFee, discount, message });
+
+      // Save to real MySQL backend database
+      await createOrderApi({
+        order_number: order.orderNumber,
+        tracking_number: order.trackingNumber,
+        customer_name: customer.fullName.trim(),
+        customer_email: customer.email.trim().toLowerCase(),
+        city: customer.city,
+        shipping_address: `${customer.address.trim()}, ${customer.barangay.trim()}, ${customer.city} ${customer.postalCode.trim()}`,
+        shipping_method: shippingMethod,
+        shipping_fee: shippingFee,
+        discount_amount: discount,
+        total_amount: order.total,
+        message: message.trim(),
+        items: items.map((item) => ({
+          product_id: item.product_id,
+          qty: item.qty,
+          price: item.price,
+        })),
+      });
+
+      // Also cache in localStorage for instant local confirmation & offline fallback
       saveOrder(order);
       clear();
       navigate(`/order-confirmation/${order.orderNumber}`);
-    } catch {
-      setError('We could not save this demo order in your browser. Check your browser storage and try again.');
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setError(err.response?.data?.error || 'Failed to place order to the database. Please check your connection and try again.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -129,7 +171,9 @@ export default function Checkout() {
                   </div>
                   <div className="payment-demo"><i className="bi bi-shield-check" /><div><strong>PAYMENT CONFIRMED</strong><span>Demo checkout only. No payment is processed.</span></div></div>
                   {error && <p className="checkout-error" role="alert">{error}</p>}
-                  <Button type="submit" variant="primary" className="w-100 checkout-submit">Place order <i className="bi bi-arrow-right" /></Button>
+                  <Button type="submit" variant="primary" className="w-100 checkout-submit" disabled={submitting}>
+                    {submitting ? 'Placing order to database...' : <>Place order <i className="bi bi-arrow-right" /></>}
+                  </Button>
                   <p className="checkout-privacy"><i className="bi bi-lock" /> Tracking details will be linked to your email.</p>
                 </aside>
               </Col>
